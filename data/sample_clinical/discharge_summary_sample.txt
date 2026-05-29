@@ -1,0 +1,7 @@
+SYNTHETIC SAMPLE - NO REAL PHI
+Assessment:
+Patient has CHF, CKD, diabetes, and hypertension. Creatinine 1.8 and A1C 8.2 are abnormal.
+Medications:
+Metformin, lisinopril, furosemide.
+Discharge Instructions:
+Follow-up within 7 days. Patient reports transportation barrier and missed medications.

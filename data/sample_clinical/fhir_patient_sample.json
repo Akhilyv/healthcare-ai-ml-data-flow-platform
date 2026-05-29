@@ -1,0 +1,1 @@
+{"resourceType":"Patient","id":"SYN-001","name":[{"family":"Example","given":["Alex"]}],"meta":{"security":[{"code":"SYNTHETIC"}]}}

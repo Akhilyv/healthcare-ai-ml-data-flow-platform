@@ -171,6 +171,45 @@ class UIConfig:
         self.enable_speech = True
         self.enable_image_upload = True
 
+class HealthcarePlatformConfig:
+    """Environment-backed settings for the healthcare AI/ML workflow layer.
+
+    The new healthcare platform package reads these values through its own
+    lightweight settings module as well. Keeping this object here preserves the
+    original project's single Config entry point for callers that already import
+    config.py.
+    """
+
+    def __init__(self):
+        self.app_env = os.getenv("APP_ENV", "local")
+        self.curated_store_mode = os.getenv("CURATED_STORE_MODE", "local")
+        self.local_curated_path = os.getenv("LOCAL_CURATED_PATH", "data/curated_store.json")
+        self.vector_store_provider = os.getenv("VECTOR_STORE_PROVIDER", "qdrant")
+        self.qdrant_url = os.getenv("QDRANT_URL")
+        self.qdrant_api_key = os.getenv("QDRANT_API_KEY")
+
+        self.llm_provider = os.getenv("LLM_PROVIDER", "azure_openai")
+        self.azure_openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT", os.getenv("azure_endpoint"))
+        self.azure_openai_api_key = os.getenv("AZURE_OPENAI_API_KEY", os.getenv("openai_api_key"))
+        self.azure_openai_api_version = os.getenv("AZURE_OPENAI_API_VERSION", os.getenv("openai_api_version"))
+        self.azure_openai_deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", os.getenv("deployment_name"))
+
+        self.google_cloud_project = os.getenv("GOOGLE_CLOUD_PROJECT")
+        self.bigquery_project_id = os.getenv("BIGQUERY_PROJECT_ID", os.getenv("GOOGLE_CLOUD_PROJECT"))
+        self.bigquery_dataset = os.getenv("BIGQUERY_DATASET")
+        self.cloud_healthcare_dataset = os.getenv("CLOUD_HEALTHCARE_DATASET")
+        self.fhir_store = os.getenv("FHIR_STORE")
+        self.hl7v2_store = os.getenv("HL7V2_STORE")
+
+        self.enable_phi_redaction = os.getenv("ENABLE_PHI_REDACTION", "true").lower() == "true"
+        self.enable_rbac = os.getenv("ENABLE_RBAC", "true").lower() == "true"
+        self.enable_audit_logging = os.getenv("ENABLE_AUDIT_LOGGING", "true").lower() == "true"
+        self.enable_human_review = os.getenv("ENABLE_HUMAN_REVIEW", "true").lower() == "true"
+        self.enable_rag_eval = os.getenv("ENABLE_RAG_EVAL", "true").lower() == "true"
+
+        self.readmission_model_path = os.getenv("READMISSION_MODEL_PATH")
+        self.audit_log_path = os.getenv("AUDIT_LOG_PATH", "logs/audit_log.jsonl")
+
 class Config:
     def __init__(self):
         self.agent_decision = AgentDecisoinConfig()
@@ -182,6 +221,7 @@ class Config:
         self.speech = SpeechConfig()
         self.validation = ValidationConfig()
         self.ui = UIConfig()
+        self.healthcare = HealthcarePlatformConfig()
         self.eleven_labs_api_key = os.getenv("ELEVEN_LABS_API_KEY")
         self.tavily_api_key = os.getenv("TAVILY_API_KEY")
         self.max_conversation_history = 20  # Include last 20 messsages (10 Q&A pairs) in history

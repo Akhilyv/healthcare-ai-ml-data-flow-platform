@@ -16,17 +16,76 @@ from pydantic import BaseModel
 import uvicorn
 import requests
 from werkzeug.utils import secure_filename
-from pydub import AudioSegment
-from elevenlabs.client import ElevenLabs
 
-from config import Config
-from agents.agent_decision import process_query
+try:
+    from pydub import AudioSegment
+except Exception:
+    AudioSegment = None
+
+try:
+    from elevenlabs.client import ElevenLabs
+except Exception:
+    ElevenLabs = None
+
+try:
+    from healthcare_ai_platform.api.clinical_routes import router as clinical_router
+except Exception as exc:
+    clinical_router = None
+    clinical_router_error = exc
+else:
+    clinical_router_error = None
+
+
+class _APIConfigFallback:
+    host = os.getenv("API_HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", os.getenv("API_PORT", "8000")))
+    debug = True
+    rate_limit = 10
+    max_image_upload_size = int(os.getenv("MAX_IMAGE_UPLOAD_SIZE_MB", "5"))
+
+
+class _SpeechConfigFallback:
+    eleven_labs_api_key = os.getenv("ELEVEN_LABS_API_KEY", "")
+    eleven_labs_voice_id = "21m00Tcm4TlvDq8ikWAM"
+
+
+class _ConfigFallback:
+    api = _APIConfigFallback()
+    speech = _SpeechConfigFallback()
+
+
+def get_config():
+    try:
+        from config import Config
+        return Config()
+    except Exception as exc:
+        print(f"Using local fallback config because legacy config could not initialize: {exc}")
+        return _ConfigFallback()
+
+
+def run_legacy_process_query(query):
+    try:
+        from agents.agent_decision import process_query
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Legacy multi-agent stack is unavailable in this environment: {exc}",
+        )
+    return process_query(query)
+
 
 # Load configuration
-config = Config()
+config = get_config()
 
 # Initialize FastAPI app
-app = FastAPI(title="Multi-Agent Medical Chatbot", version="2.0")
+app = FastAPI(
+    title="Healthcare AI/ML Data Flow Platform",
+    version="2.1",
+    description="EHR-linked medical assistant platform with clinical NLP, RAG, predictive ML, governance, and provider-facing decision support.",
+)
+
+if clinical_router is not None:
+    app.include_router(clinical_router)
 
 # Set up directories
 UPLOAD_FOLDER = "uploads/backend"
@@ -45,9 +104,11 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 # Set up templates
 templates = Jinja2Templates(directory="templates")
 
-# Initialize ElevenLabs client
-client = ElevenLabs(
-    api_key=config.speech.eleven_labs_api_key,
+# Initialize ElevenLabs client only when the optional dependency and key are available.
+client = (
+    ElevenLabs(api_key=config.speech.eleven_labs_api_key)
+    if ElevenLabs is not None and config.speech.eleven_labs_api_key
+    else None
 )
 
 # Define allowed file extensions
@@ -89,7 +150,10 @@ async def index(request: Request):
 @app.get("/health")
 def health_check():
     """Health check endpoint for Docker health checks"""
-    return {"status": "healthy"}
+    return {
+        "status": "healthy",
+        "clinical_router": "ok" if clinical_router is not None else f"unavailable: {clinical_router_error}",
+    }
 
 @app.post("/chat")
 def chat(
@@ -103,7 +167,7 @@ def chat(
         session_id = str(uuid.uuid4())
     
     try:
-        response_data = process_query(request.query)
+        response_data = run_legacy_process_query(request.query)
         response_text = response_data['messages'][-1].content
         
         # Set session cookie
@@ -171,7 +235,7 @@ async def upload_image(
     
     try:
         query = {"text": text, "image": file_path}
-        response_data = process_query(query)
+        response_data = run_legacy_process_query(query)
         response_text = response_data['messages'][-1].content
 
         # Set session cookie
@@ -223,7 +287,7 @@ def validate_medical_output(
         if comments:
             validation_query += f" Comments: {comments}"
         
-        response_data = process_query(validation_query)
+        response_data = run_legacy_process_query(validation_query)
 
         if validation_result.lower() == 'yes':
             return {
@@ -274,6 +338,12 @@ async def transcribe_audio(audio: UploadFile = File(...)):
         mp3_path = f"./{SPEECH_DIR}/speech_{uuid.uuid4()}.mp3"
         
         try:
+            if AudioSegment is None or client is None:
+                return JSONResponse(
+                    status_code=503,
+                    content={"error": "Speech transcription dependencies or credentials are not configured"}
+                )
+
             # Use pydub with format detection
             audio = AudioSegment.from_file(temp_audio)
             audio.export(mp3_path, format="mp3")
@@ -337,6 +407,12 @@ async def generate_speech(request: SpeechRequest):
                 content={"error": "Text is required"}
             )
         
+        if client is None:
+            return JSONResponse(
+                status_code=503,
+                content={"error": "Speech generation credentials are not configured"}
+            )
+
         # Define API request to ElevenLabs
         elevenlabs_url = f"https://api.elevenlabs.io/v1/text-to-speech/{selected_voice_id}/stream"
         headers = {

@@ -8,6 +8,7 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     ffmpeg \
+    curl \
     build-essential \
     # OpenCV dependencies
     libgl1-mesa-glx \

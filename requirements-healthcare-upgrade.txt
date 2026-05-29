@@ -1,0 +1,14 @@
+# Lightweight local/runtime requirements for the healthcare upgrade
+pydantic>=2
+fastapi>=0.115
+pytest>=8
+python-dotenv>=1
+httpx>=0.28
+uvicorn>=0.34
+python-multipart>=0.0.20
+# Optional production/ML integrations
+scikit-learn>=1.6; extra == "ml"
+spacy>=3.8; extra == "nlp"
+transformers>=4.49; extra == "nlp"
+opentelemetry-api>=1.30; extra == "observability"
+prometheus-client>=0.21; extra == "observability"

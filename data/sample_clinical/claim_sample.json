@@ -1,0 +1,1 @@
+{"synthetic":true,"claim_id":"CLM-001","patient_id":"SYN-001","encounter_id":"ENC-001","diagnosis_codes":["I50.9","E11.9"],"procedure_codes":["992 discharge"],"payer":"Synthetic Health Plan","amount":1234.56,"status":"submitted"}

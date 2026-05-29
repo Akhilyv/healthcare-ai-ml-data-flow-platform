@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
  
 ![logo](https://github.com/souvikmajumder26/Multi-Agent-Medical-Assistant/blob/main/assets/logo_rounded.png)
 
@@ -26,9 +26,13 @@
 > 2. **Enhanced RAG References**: Links to source documents and reference images present in reranked retrieved chunks stored in local storage are added to the bottom of the RAG responses.
 >
 > To use Unstructured.io based solution, refer release - [v2.0](https://github.com/souvikmajumder26/Multi-Agent-Medical-Assistant/tree/v2.0).
+
+> [!IMPORTANT]
+> This fork now also includes a production-style **Healthcare AI/ML Data Flow Platform** layer: an EHR-linked, agentic AI system for clinical documentation, contextual retrieval, predictive ML, governance, and provider-facing decision support.
  
 ## 📚 Table of Contents
 - [Overview](#overview)
+- [Healthcare AI/ML Data Flow Platform](#healthcare-platform)
 - [Demo](#demo)
 - [Technical Flow Chart](#technical-flowchart)
 - [Key Features](#key-features)
@@ -62,6 +66,86 @@ The **Multi-Agent Medical Assistant** is an **AI-powered chatbot** designed to a
 🔹 **🔒 Scalable, Production-Ready AI with Modularized Code & Robust Exception Handling**  
 
 📂 **For learners**: Check out [`agents/README.md`](agents/README.md) for a **detailed breakdown** of the agentic workflow! 🎯  
+
+----
+
+## Healthcare AI/ML Data Flow Platform <a name="healthcare-platform"></a>
+
+This upgrade preserves the original Multi-Agent Medical Assistant while adding a modular healthcare workflow platform under `healthcare_ai_platform/`.
+
+### Workflow Summary
+
+EHR / FHIR / HL7v2 / Clinical Notes / Scanned Docs / Claims
+→ Cloud Healthcare API-style ingestion
+→ Pub/Sub-style event bus
+→ Dataflow-style transformation
+→ BigQuery-style curated layer
+→ Clinical NLP + RAG + Predictive ML
+→ Governance / RBAC / PHI redaction / Audit logs
+→ Provider-facing summary, retrieved context, patient-risk support, analytics
+
+### Key Platform Modules
+
+- `healthcare_ai_platform/api`: `/v2/clinical` FastAPI routes and Pydantic contracts.
+- `healthcare_ai_platform/ingestion`: mock-safe EHR, FHIR, HL7v2, document, and claims ingestion, plus Cloud Healthcare API-style, Pub/Sub-style, and Dataflow-style local adapters.
+- `healthcare_ai_platform/curated`: BigQuery-style repository, local JSON fallback, feature store, and data quality checks.
+- `healthcare_ai_platform/nlp`: clinical note sectioning, entity extraction, normalization, labs, follow-up, social risk, and adherence risk signals.
+- `healthcare_ai_platform/rag`: patient-context retrieval, prompt building, source citations, grounding checks, and vector-store adapter contracts.
+- `healthcare_ai_platform/ml`: transparent readmission and patient-risk decision-support scoring.
+- `healthcare_ai_platform/workflows`: clinical decision workflow with validation, RBAC, patient context, NLP, retrieval, risk scoring, grounding, guardrails, human review, and final response packaging.
+- `healthcare_ai_platform/governance`: RBAC, PHI redaction, guardrails, audit logging, and human review.
+- `healthcare_ai_platform/observability`, `evaluation`, and `dashboards`: tracing, metrics, RAG/clinical evaluation stubs, and analytics-ready exports.
+
+### New API Endpoints
+
+- `GET /v2/clinical/health`
+- `POST /v2/clinical/documents/ingest`
+- `POST /v2/clinical/fhir/ingest`
+- `POST /v2/clinical/hl7v2/ingest`
+- `POST /v2/clinical/query`
+- `GET /v2/clinical/patient/{patient_id}/risk`
+- `POST /v2/clinical/evaluation/rag`
+- `GET /v2/clinical/dashboard/export`
+
+### Environment Variables
+
+Copy `.env.example` to `.env`. Local healthcare-platform tests do not require cloud credentials. The new settings support:
+
+- Local platform: `APP_ENV`, `CURATED_STORE_MODE`, `LOCAL_CURATED_PATH`
+- Vector store: `VECTOR_STORE_PROVIDER`, `QDRANT_URL`, `QDRANT_API_KEY`
+- LLM: `LLM_PROVIDER`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_API_VERSION`, `AZURE_OPENAI_DEPLOYMENT_NAME`
+- GCP-style abstractions: `GOOGLE_CLOUD_PROJECT`, `BIGQUERY_DATASET`, `CLOUD_HEALTHCARE_DATASET`, `FHIR_STORE`, `HL7V2_STORE`
+- Governance: `ENABLE_PHI_REDACTION`, `ENABLE_RBAC`, `ENABLE_AUDIT_LOGGING`, `ENABLE_HUMAN_REVIEW`, `ENABLE_RAG_EVAL`
+- ML/audit: `READMISSION_MODEL_PATH`, `AUDIT_LOG_PATH`
+
+### Local Run And Tests
+
+For the lightweight healthcare-platform API path:
+
+```bash
+python -m pip install -r requirements-healthcare-upgrade.txt
+python app.py
+python -m pytest tests -q
+```
+
+The original full assistant still uses `requirements.txt` and the Azure/LangChain, Qdrant, Docling, CV, and speech dependencies described below.
+
+### Docker
+
+```bash
+docker build -t healthcare-ai-platform .
+docker run -p 8000:8000 --env-file .env healthcare-ai-platform
+```
+
+### Safety, HIPAA/PHI, And Human Review
+
+This project is for clinical decision support and architecture demonstration. It is not a medical device, not clinically validated, and must not be used as the sole basis for diagnosis or treatment. Final clinical decisions must remain clinician-controlled.
+
+The platform includes local PHI redaction, RBAC, audit logs, synthetic-only sample data, clinical guardrails, human-review routing, and RAG evaluation stubs. Production deployment still requires formal HIPAA risk analysis, BAA-covered services, encryption, identity-aware access controls, retention policies, monitoring, and incident response.
+
+### RAG Evaluation, Predictive ML, Governance, And Observability
+
+RAG evaluation includes heuristic RAGAS/TruLens-style metrics for relevance, groundedness, answer faithfulness, citation coverage, unsupported claims, and retrieval count. Predictive ML currently uses a transparent deterministic readmission baseline, with optional sklearn/joblib artifact loading when `READMISSION_MODEL_PATH` is set; all outputs remain not clinically validated until a formal validation process is completed. Governance and observability include RBAC, PHI redaction, audit logging, guardrails, human review, in-memory metrics, and OpenTelemetry/Prometheus-compatible naming hooks.
 
 <!-- The **Multi-Agent Medical Assistant** is an advanced AI-powered chatbot system designed to assist in medical diagnosis, research, and patient interactions.
 

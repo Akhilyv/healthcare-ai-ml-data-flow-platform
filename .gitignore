@@ -129,6 +129,11 @@ celerybeat.pid
 
 # Environments
 .env
+
+# Local healthcare platform runtime artifacts
+logs/
+data/curated_store.json
+dashboard_outputs/
 .venv
 env/
 venv/
