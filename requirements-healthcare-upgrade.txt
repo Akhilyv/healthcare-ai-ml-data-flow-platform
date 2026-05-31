@@ -6,6 +6,9 @@ python-dotenv>=1
 httpx>=0.28
 uvicorn>=0.34
 python-multipart>=0.0.20
+Jinja2>=3.1
+requests>=2.32
+Werkzeug>=3.1
 # Optional production/ML integrations
 scikit-learn>=1.6; extra == "ml"
 spacy>=3.8; extra == "nlp"
